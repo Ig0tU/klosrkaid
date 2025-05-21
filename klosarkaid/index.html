@@ -9,7 +9,7 @@
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self' data: blob: https://*.asim.sh https://*.kyklos.io https://*.metamask.io;
         frame-src 'self' https://*.asim.sh https://*.kyklos.io;
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.asim.sh https://*.kyklos.io https://*.metamask.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.asim.sh https://*.kyklos.io https://*.metamask.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.tailwindcss.com;
         style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com;
         img-src 'self' data: blob: https://*.asim.sh https://*.kyklos.io;
         font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com;
@@ -24,6 +24,29 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
     <title>AI Arcade | Kyklos</title>
     
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio" 
+            integrity="sha384-6TAP6qVrSKlK/pAZ6uqp3w6DFpPxHQXzYoHtNXqT+2KdSimQTlGY2FaKP/hqwHAZ" 
+            crossorigin="anonymous"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#10b981',
+                        dark: '#1e293b',
+                        light: '#f8fafc',
+                    },
+                    fontFamily: {
+                        'arcade': ['"Press Start 2P"', 'cursive'],
+                        'sans': ['Roboto', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,9 +56,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/frames.css">
     
-    <!-- Compiled CSS -->
-    <link rel="stylesheet" href="/css/styles.css">
-    
     <style>
         :root {
             --primary: #6366f1;
@@ -44,7 +64,175 @@
             --light: #f8fafc;
         }
         
-        /* Rest of your existing styles... */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: var(--light);
+        }
+        
+        .game-card {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-radius: 1rem;
+            z-index: -1;
+        }
+        
+        .arcade-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        .pixel-border {
+            position: relative;
+        }
+        
+        .pixel-border::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border: 3px solid var(--primary);
+            border-radius: 0.5rem;
+            z-index: -1;
+            animation: borderPulse 2s infinite;
+        }
+        
+        @keyframes borderPulse {
+            0% { border-color: var(--primary); }
+            50% { border-color: var(--secondary); }
+            100% { border-color: var(--primary); }
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--primary), 0 0 20px var(--primary);
+        }
+        
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-1rem); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+        }
     </style>
 </head>
-<!-- Rest of your existing HTML body content... -->
+<body class="min-h-screen">
+    <!-- Rest of your existing body content... -->
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+    <script src="/js/wallet.js"></script>
+    <script src="/js/frames.js"></script>
+    
+    <!-- Initialize Wallet and PWA -->
+    <script>
+        // Function to initialize frames after wallet connection
+        const initializeFrames = () => {
+            document.querySelectorAll('.game-frame').forEach(frame => {
+                const src = frame.getAttribute('data-src');
+                if (src) {
+                    frame.src = src;
+                }
+            });
+        };
+
+        const waitForLibraries = async () => {
+            console.log('Waiting for libraries...');
+            const timeout = 5000; // 5 seconds timeout
+            const start = Date.now();
+            
+            while (!window.ethers || !window.detectEthereumProvider) {
+                if (Date.now() - start > timeout) {
+                    throw new Error('Required libraries failed to load');
+                }
+                console.log('Waiting for libraries to load...');
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            console.log('All libraries loaded successfully');
+        };
+
+        const initializeApp = async () => {
+            try {
+                console.log('Starting app initialization...');
+                
+                // Wait for required libraries
+                await waitForLibraries();
+                console.log('Libraries loaded and verified');
+                
+                // Create wallet manager instance
+                console.log('Creating WalletManager instance...');
+                window.walletManager = new WalletManager();
+                console.log('WalletManager instance created');
+                
+                // Initialize wallet manager
+                console.log('Initializing WalletManager...');
+                const initResult = await window.walletManager.init();
+                console.log('WalletManager initialization result:', initResult);
+                
+                // Make wallet manager globally accessible
+                window.walletManagerGlobal = window.walletManager;
+                console.log('WalletManager assigned to global scope');
+                
+                // Initialize service worker
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const registration = await navigator.serviceWorker.register('/sw.js');
+                        console.log('ServiceWorker registration successful');
+                    } catch (err) {
+                        console.error('ServiceWorker registration failed:', err);
+                    }
+                }
+                
+                console.log('App initialization completed successfully');
+            } catch (error) {
+                console.error('App initialization error:', error);
+                if (window.walletManager) {
+                    window.walletManager.showError(error.message);
+                }
+            }
+        };
+
+        // Ensure DOM is loaded before starting initialization
+        console.log('Current document.readyState:', document.readyState);
+        if (document.readyState === 'loading') {
+            console.log('DOM still loading, adding DOMContentLoaded listener');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOMContentLoaded fired, starting initialization');
+                initializeApp();
+            });
+        } else {
+            console.log('DOM already loaded, starting initialization immediately');
+            initializeApp();
+        }
+    </script>
+</body>
+</html>
