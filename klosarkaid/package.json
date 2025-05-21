@@ -1,0 +1,20 @@
+{
+  "name": "klosarkaid",
+  "version": "1.0.0",
+  "description": "Kyklos AI Arcade - Token-gated games and tools",
+  "main": "sw.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./css/main.css -o ./css/styles.css",
+    "watch:css": "tailwindcss -i ./css/main.css -o ./css/styles.css --watch",
+    "build": "npm run build:css",
+    "dev": "npm run watch:css"
+  },
+  "keywords": ["kyklos", "arcade", "blockchain", "games"],
+  "author": "Kyklos",
+  "license": "ISC",
+  "dependencies": {
+    "autoprefixer": "10.4.14",
+    "postcss": "8.4.24",
+    "tailwindcss": "3.3.2"
+  }
+}
